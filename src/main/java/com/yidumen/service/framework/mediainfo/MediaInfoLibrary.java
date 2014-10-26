@@ -18,16 +18,7 @@ import static java.util.Collections.singletonMap;
 public interface MediaInfoLibrary extends Library {
 
     MediaInfoLibrary INSTANCE = (MediaInfoLibrary) Native.loadLibrary(VideoService.Library,
-                                                                      MediaInfoLibrary.class,
-                                                                      singletonMap(OPTION_FUNCTION_MAPPER,
-                                                                                   new FunctionMapper() {
-
-                                                                                       @Override
-                                                                                       public String getFunctionName(NativeLibrary lib, Method method) {
-                                                                                           return "MediaInfo_" + method.getName();
-                                                                                       }
-                                                                                   }
-                                                                      ));
+                                                                      MediaInfoLibrary.class);
 
     //Constructor/Destructor
     Pointer New();
