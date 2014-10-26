@@ -8,7 +8,7 @@ public final class MediaInfo {
     private Pointer Handle;
 
     public MediaInfo() {
-        Handle = MediaInfoLibrary.INSTANCE.MediaInfo();
+        Handle = MediaInfoLibrary.INSTANCE.New();
     }
 
     public void dispose() {
@@ -232,7 +232,7 @@ public final class MediaInfo {
      * means Yes
      */
     public static String Option_Static(String Option) {
-        return MediaInfoLibrary.INSTANCE.Option(MediaInfoLibrary.INSTANCE.MediaInfo(), new WString(Option), new WString("")).toString();
+        return MediaInfoLibrary.INSTANCE.Option(MediaInfoLibrary.INSTANCE.New(), new WString(Option), new WString("")).toString();
     }
 
     /**
@@ -244,6 +244,6 @@ public final class MediaInfo {
      * means Yes
      */
     public static String Option_Static(String Option, String Value) {
-        return MediaInfoLibrary.INSTANCE.Option(MediaInfoLibrary.INSTANCE.MediaInfo(), new WString(Option), new WString(Value)).toString();
+        return MediaInfoLibrary.INSTANCE.Option(MediaInfoLibrary.INSTANCE.New(), new WString(Option), new WString(Value)).toString();
     }
 }
