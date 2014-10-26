@@ -21,7 +21,7 @@ public interface MediaInfoLibrary extends Library {
                                                                       MediaInfoLibrary.class);
 
     //Constructor/Destructor
-    Pointer New();
+    Pointer MediaInfo();
 
     void Delete(Pointer Handle);
 
