@@ -13,6 +13,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,12 +58,15 @@ public class VideoService {
     @GET
     @Produces("application/json; charset=utf-8")
     @Path("/info/{file}")
-    public String getVideoInfo(@PathParam("file") String file) {
+    public Response getVideoInfo(@PathParam("file") String file) {
         final MediaInfo mediaInfo = new MediaInfo();
         final StringBuilder sb = new StringBuilder("{");
         final File root = new File(rootPath);
         final File videoDir = new File(root, "video");
         final File flow = new File(videoDir, "180/" + file + "_180.mp4");
+        if (!flow.exists()) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
         mediaInfo.Open(flow.getAbsolutePath());
         sb.append("\"Duration\":").append(mediaInfo.Get(StreamKind.General, 0, "Duration")).append(",");
         sb.append("\"DurationString\":\"").append(mediaInfo.Get(StreamKind.General, 0, "Duration/String3")).append("\",");
@@ -100,7 +104,7 @@ public class VideoService {
             }
         }
         sb.append("]}");
-        return sb.toString();
+        return Response.ok(sb.toString()).build();
     }
 
 }
