@@ -72,16 +72,20 @@ public class VideoService {
         sb.append("\"PixelAspectRatio\":\"").append(mediaInfo.Get(StreamKind.Video, 0, "PixelAspectRatio")).append("\",");
         sb.append("\"DisplayAspectRatio\":\"").append(mediaInfo.Get(StreamKind.Video, 0, "DisplayAspectRatio/String")).append("\",");
         sb.append("\"FrameRate\":\"").append(mediaInfo.Get(StreamKind.Video, 0, "FrameRate/String")).append("\",");
-        sb.append("\"extInfo\":[{");
+        sb.append("\"extInfo\":[");
         mediaInfo.Close();
-        for (VideoResolution vr : VideoResolution.values()) {
+        final VideoResolution[] resolutions = VideoResolution.values();
+        for (int f = 0, last = resolutions.length - 1; f < resolutions.length; f++) {
+            VideoResolution vr = resolutions[f];
             final File resDir = new File(videoDir, vr.getResolution());
-            for (File video : resDir.listFiles()) {
+            final File[] resFiles = resDir.listFiles();
+            for (int i = 0, max = resFiles.length; i < max; i++) {
+                final File video = resFiles[i];
                 if (!video.getName().contains(file)) {
                     continue;
                 }
                 mediaInfo.Open(video.getAbsolutePath());
-                sb.append(",{");
+                sb.append("{");
                 sb.append("\"FileName\":\"").append(mediaInfo.Get(StreamKind.General, 0, "FileName")).append(".").append(mediaInfo.Get(StreamKind.General, 0, "FileExtension")).append("\",");
                 sb.append("\"FileSize\":").append(mediaInfo.Get(StreamKind.General, 0, "FileSize")).append(",");
                 sb.append("\"FileSizeString\":\"").append(mediaInfo.Get(StreamKind.General, 0, "FileSize/String4")).append("\",");
@@ -90,6 +94,9 @@ public class VideoService {
                 sb.append("\"Width\":\"").append(mediaInfo.Get(StreamKind.Video, 0, "Width")).append("\",");
                 sb.append("\"Height\":\"").append(mediaInfo.Get(StreamKind.Video, 0, "Height")).append("\"}");
                 mediaInfo.Close();
+                if (f < last) {
+                    sb.append(",");
+                }
             }
         }
         sb.append("]}");
