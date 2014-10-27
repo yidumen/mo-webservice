@@ -27,6 +27,7 @@ public class VideoService {
     private final static Logger LOG = LoggerFactory.getLogger(VideoService.class);
     @Context
     private ServletContext context;
+    private String rootPath;
 
     /**
      * Creates a new instance of VideoService
@@ -36,13 +37,14 @@ public class VideoService {
 
     @PostConstruct
     public void init() {
-        Properties properties = new Properties();
+        Properties prop = new Properties();
         try {
-            properties.load(context.getResourceAsStream("/WEB-INF/jna.properties"));
+            prop.load(context.getResourceAsStream("/WEB-INF/jna.properties"));
         } catch (IOException ex) {
             LOG.info("文件应放在 {}", context.getRealPath("WEB-INF"));
         }
-        System.setProperty("jna.library.path", properties.getProperty("mediaInfo"));
+        rootPath = prop.getProperty("resourcePath", "D:/resources");
+        System.setProperty("jna.library.path", prop.getProperty("mediaInfo"));
     }
 
     /**
@@ -58,7 +60,7 @@ public class VideoService {
     public String getVideoInfo(@PathParam("file") String file) {
         final MediaInfo mediaInfo = new MediaInfo();
         final StringBuilder sb = new StringBuilder("{");
-        final File root = new File(context.getInitParameter("rootPath"));
+        final File root = new File(rootPath);
         final File videoDir = new File(root, "video");
         for (VideoResolution vr : VideoResolution.values()) {
             final File resDir = new File(videoDir, vr.getResolution());
