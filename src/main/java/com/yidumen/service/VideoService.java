@@ -1,28 +1,18 @@
 package com.yidumen.service;
 
 import com.yidumen.dao.constant.VideoResolution;
-import com.yidumen.service.framework.mediainfo.InfoKind;
 import com.yidumen.service.framework.mediainfo.MediaInfo;
 import com.yidumen.service.framework.mediainfo.StreamKind;
 import java.io.File;
-import java.io.InputStream;
-import java.io.RandomAccessFile;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.security.SignatureException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+import java.io.IOException;
+import java.util.Properties;
 import javax.annotation.PostConstruct;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.servlet.ServletConfig;
-import javax.ws.rs.core.Context;
+import javax.servlet.ServletContext;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.xml.bind.DatatypeConverter;
+import javax.ws.rs.core.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,9 +25,8 @@ import org.slf4j.LoggerFactory;
 public class VideoService {
 
     private final static Logger LOG = LoggerFactory.getLogger(VideoService.class);
-    public static String Library;
     @Context
-    private ServletConfig context;
+    private ServletContext context;
 
     /**
      * Creates a new instance of VideoService
@@ -47,7 +36,13 @@ public class VideoService {
 
     @PostConstruct
     public void init() {
-        Library = context.getInitParameter("mediaInfo");
+        Properties properties = new Properties();
+        try {
+            properties.load(context.getResourceAsStream("/WEB-INF/jna.properties"));
+        } catch (IOException ex) {
+            LOG.info("文件应放在 {}", context.getRealPath("WEB-INF"));
+        }
+        System.setProperty("jna.library.path", properties.getProperty("mediaInfo"));
     }
 
     /**

@@ -7,7 +7,6 @@ import com.sun.jna.Native;
 import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
-import com.yidumen.service.VideoService;
 import java.lang.reflect.Method;
 import static java.util.Collections.singletonMap;
 
@@ -17,7 +16,7 @@ import static java.util.Collections.singletonMap;
  */
 public interface MediaInfoLibrary extends Library {
 
-    MediaInfoLibrary INSTANCE = (MediaInfoLibrary) Native.loadLibrary(VideoService.Library,
+    MediaInfoLibrary INSTANCE = (MediaInfoLibrary) Native.loadLibrary(MediaInfo.LibraryPath,
                                                                       MediaInfoLibrary.class,
                                                                       singletonMap(OPTION_FUNCTION_MAPPER,
                                                                                    new FunctionMapper() {

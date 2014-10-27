@@ -1,10 +1,59 @@
 package com.yidumen.service.framework.mediainfo;
 
+import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
 
 public final class MediaInfo {
 
+    public static String LibraryPath = "mediainfo";
+    static
+    {
+        // libmediainfo for linux depends on libzen
+        try
+        {
+            // We need to load dependencies first, because we know where our native libs are (e.g. Java Web Start Cache).
+            // If we do not, the system will look for dependencies, but only in the library path.
+            String os=System.getProperty("os.name");
+            if (os!=null && !os.toLowerCase().startsWith("windows") && !os.toLowerCase().startsWith("mac"))
+            {
+                final ClassLoader loader=MediaInfo.class.getClassLoader();
+                final String LocalPath;
+                if (loader!=null)
+                {
+                    LocalPath=loader.getResource(MediaInfo.class.getName().replace('.', '/')+ ".class").getPath().replace("MediaInfo.class", "");
+                    try
+                    {
+                        NativeLibrary.getInstance(LocalPath+"libzen.so.0"); // Local path
+                    }
+                    catch (LinkageError e)
+                    {
+                        NativeLibrary.getInstance("zen"); // Default path
+                    }
+                }
+                else
+                {
+                    LocalPath="";
+                    NativeLibrary.getInstance("zen"); // Default path
+                }
+                if (LocalPath.length()>0)
+                {
+                    try
+                    {
+                        NativeLibrary.getInstance(LocalPath+"libmediainfo.so.0"); // Local path
+                        LibraryPath=LocalPath+"libmediainfo.so.0";
+                    }
+                    catch (LinkageError e)
+                    {
+                    }
+                }
+            }
+        }
+        catch (LinkageError  e)
+        {
+            //Logger.getLogger(MediaInfo.class.getName()).warning("Failed to preload libzen");
+        }
+    }
     private Pointer Handle;
 
     public MediaInfo() {
