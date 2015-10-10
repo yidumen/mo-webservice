@@ -1,21 +1,37 @@
 package com.yidumen.service;
 
-import com.yidumen.dao.constant.VideoResolution;
-import com.yidumen.service.framework.mediainfo.MediaInfo;
-import com.yidumen.service.framework.mediainfo.StreamKind;
-import java.io.File;
-import java.io.IOException;
-import java.util.Properties;
-import javax.annotation.PostConstruct;
-import javax.servlet.ServletContext;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
+import com.yidumen.service.constant.VideoResolution;
+import com.yidumen.service.constant.mediainfo.MediaInfo;
+import com.yidumen.service.constant.mediainfo.StreamKind;
+import com.yidumen.service.framework.RangeHeader;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.client.fluent.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.PostConstruct;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.net.URLEncoder;
+import java.util.Date;
+import java.util.Properties;
 
 /**
  * REST Web Service
@@ -56,7 +72,7 @@ public class VideoService {
      * @return an instance of java.lang.String
      */
     @GET
-    @Produces("application/json; charset=utf-8")
+    @Produces(MediaType.APPLICATION_JSON)
     @Path("/info/{file}")
     public Response getVideoInfo(@PathParam("file") String file) {
         final MediaInfo mediaInfo = new MediaInfo();
@@ -107,4 +123,49 @@ public class VideoService {
         return Response.ok(sb.toString()).build();
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Path("/dl/{resolution}/{file}")
+    public void downloadVideo(@PathParam("resolution") String resolution,
+                              @PathParam("file") String file,
+                              @HeaderParam(HttpHeaders.IF_MODIFIED_SINCE) Date lastModified,
+                              @HeaderParam("Range") RangeHeader range,
+                              @Context HttpServletResponse response) throws IOException {
+        final File root = new File(rootPath);
+        final File videoDir = new File(root, "video");
+        final File flow = new File(videoDir, resolution + "/" + file + "_" + resolution + ".mp4");
+        //1.检测文件是否存在，否则返回404
+        if (!flow.exists()) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+        }
+        //2.对比LastModefied决定是否返回304
+        if (FileUtils.isFileNewer(flow, lastModified)) {
+            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+            final PrintWriter writer = response.getWriter();
+            writer.flush();
+            writer.close();
+            return;
+        }
+        //3.下载文件
+        //3.1 设置Content-length
+        response.setContentLengthLong(flow.length());
+        //3.2 检测Range信息，支持断点续传
+        long to = range.getTo();
+        if (to < 0) {
+            to = flow.length();
+        }
+        response.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        response.setHeader("Accept-Ranges", "bytes");
+        response.setHeader("Content-Range", "bytes " + range.getFrom() + "-" + to + "/" + flow.length());
+        response.setDateHeader(HttpHeaders.LAST_MODIFIED, flow.lastModified());
+        response.setHeader("content-encoding", "identity");
+        final InputStream jsonStream = Request.Get("http://www.yidumen.com/ajax/video/" + file).execute().returnContent().asStream();
+        final JsonReader reader = Json.createReader(jsonStream);
+        final JsonObject jsonObject = reader.readObject();
+        final String title = jsonObject.getString("title");
+        final String filename = URLEncoder.encode(file + "_" + title + "_" + resolution + ".mp4", "utf-8");
+        response.setHeader("Content-Disposition", "attachment;filename=\"" + filename + "\";filename*=utf-8''"+filename);
+        //3.3 输出
+        IOUtils.copyLarge(FileUtils.openInputStream(flow), response.getOutputStream(), range.getFrom(), to - range.getFrom() + 1);
+    }
 }

@@ -24,6 +24,8 @@ public class ApplicationConfig extends Application {
      * If required, comment out calling this method in getClasses().
      */
     private void addRestResourceClasses(Set<Class<?>> resources) {
+        resources.add(com.yidumen.service.framework.RangeHeader.class);
+        resources.add(com.yidumen.service.framework.RangeHeaderConverter.class);
         resources.add(com.yidumen.service.VideoService.class);
     }
     

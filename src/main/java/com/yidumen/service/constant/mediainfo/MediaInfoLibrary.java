@@ -1,8 +1,7 @@
-package com.yidumen.service.framework.mediainfo;
+package com.yidumen.service.constant.mediainfo;
 
 import com.sun.jna.FunctionMapper;
 import com.sun.jna.Library;
-import static com.sun.jna.Library.OPTION_FUNCTION_MAPPER;
 import com.sun.jna.Native;
 import com.sun.jna.NativeLibrary;
 import com.sun.jna.Pointer;

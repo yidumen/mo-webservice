@@ -1,4 +1,4 @@
-package com.yidumen.service.framework.mediainfo;
+package com.yidumen.service.constant.mediainfo;
 
 public enum StreamKind {
 
