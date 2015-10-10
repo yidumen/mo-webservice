@@ -131,15 +131,17 @@ public class VideoService {
                               @HeaderParam(HttpHeaders.IF_MODIFIED_SINCE) Date lastModified,
                               @HeaderParam("Range") RangeHeader range,
                               @Context HttpServletResponse response) throws IOException {
+        LOG.debug("lastModeified: {}, range: {}", lastModified, range);
         final File root = new File(rootPath);
         final File videoDir = new File(root, "video");
         final File flow = new File(videoDir, resolution + "/" + file + "_" + resolution + ".mp4");
         //1.检测文件是否存在，否则返回404
         if (!flow.exists()) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
         }
         //2.对比LastModefied决定是否返回304
-        if (FileUtils.isFileNewer(flow, lastModified)) {
+        if (lastModified != null && FileUtils.isFileNewer(flow, lastModified)) {
             response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
             final PrintWriter writer = response.getWriter();
             writer.flush();
@@ -150,13 +152,9 @@ public class VideoService {
         //3.1 设置Content-length
         response.setContentLengthLong(flow.length());
         //3.2 检测Range信息，支持断点续传
-        long to = range.getTo();
-        if (to < 0) {
-            to = flow.length();
-        }
         response.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         response.setHeader("Accept-Ranges", "bytes");
-        response.setHeader("Content-Range", "bytes " + range.getFrom() + "-" + to + "/" + flow.length());
+
         response.setDateHeader(HttpHeaders.LAST_MODIFIED, flow.lastModified());
         response.setHeader("content-encoding", "identity");
         final InputStream jsonStream = Request.Get("http://www.yidumen.com/ajax/video/" + file).execute().returnContent().asStream();
@@ -164,8 +162,18 @@ public class VideoService {
         final JsonObject jsonObject = reader.readObject();
         final String title = jsonObject.getString("title");
         final String filename = URLEncoder.encode(file + "_" + title + "_" + resolution + ".mp4", "utf-8");
-        response.setHeader("Content-Disposition", "attachment;filename=\"" + filename + "\";filename*=utf-8''"+filename);
+        response.setHeader("Content-Disposition", "attachment;filename=\"" + filename + "\";filename*=utf-8''" + filename);
         //3.3 输出
+        long to = 0;
+        if (range != null) {
+            to = range.getTo();
+            if (to < 0) {
+                to = flow.length();
+            }
+            response.setHeader("Content-Range", "bytes " + range.getFrom() + "-" + to + "/" + flow.length());
         IOUtils.copyLarge(FileUtils.openInputStream(flow), response.getOutputStream(), range.getFrom(), to - range.getFrom() + 1);
+        } else {
+            IOUtils.copyLarge(FileUtils.openInputStream(flow), response.getOutputStream());
+        }
     }
 }
